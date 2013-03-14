@@ -1,0 +1,49 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity" >
+
+    <Button
+        android:id="@+id/enableBTButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_marginRight="29dp"
+        android:layout_toLeftOf="@+id/pairedButton"
+        android:text="EnableBT" />
+
+    <Button
+        android:id="@+id/pairedButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/enableDiscoveryButton"
+        android:layout_alignRight="@+id/newDevicesButton"
+        android:text="Paired" />
+
+    <Button
+        android:id="@+id/enableDiscoveryButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/enableBTButton"
+        android:layout_centerHorizontal="true"
+        android:text="EnableDiscoveratibility" />
+
+    <Button
+        android:id="@+id/newDevicesButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/enableDiscoveryButton"
+        android:layout_centerHorizontal="true"
+        android:text="Look for new devices" />
+
+    <Button
+        android:id="@+id/listenForConnectionButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/newDevicesButton"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="18dp"
+        android:text="ListenForConnection" />
+
+</RelativeLayout>
