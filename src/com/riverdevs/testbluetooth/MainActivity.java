@@ -1,25 +1,22 @@
 package com.riverdevs.testbluetooth;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+
+import com.riverdevs.testbluetooth.utils.Utility;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothServerSocket;
-import android.bluetooth.BluetoothSocket;
-import android.content.Context;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
-
-import com.riverdevs.testbluetooth.utils.Constants;
 
 public class MainActivity extends Activity {
 
@@ -28,9 +25,12 @@ public class MainActivity extends Activity {
 	protected static final int ACTIVITY_CREATE = 668;
 	protected static final int REQUEST_INIT_BT_FOR_NEW_DEVICE = 669;
 	protected static final int REQUEST_INIT_BT_FOR_PAIRED_DEVICES = 670;
+	protected static final int REQUEST_INIT_BT_FOR_LISTEN_CONNECTION = 671;
 	
 	protected BluetoothAdapter mBluetoothAdapter;
 	
+	private Button listenForConnectionButton;
+			
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,15 +70,34 @@ public class MainActivity extends Activity {
 			}
 		});
         
-        Button listenForConnectionButton = (Button) findViewById(R.id.listenForConnectionButton);
+        listenForConnectionButton = (Button) findViewById(R.id.listenForConnectionButton);
         listenForConnectionButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				new ListenerForConnectionTask().execute();
+				if(initBluetooth(MainActivity.this, REQUEST_INIT_BT_FOR_LISTEN_CONNECTION)){
+					listenForConnection();
+				}
 			}
         });
+        
+        Utility.UIHandler = new Handler(){
+    		@Override
+    		public void handleMessage(Message msg) {
+    			Bundle bundle = msg.getData();
+    			showMessage(bundle.getString("message"));
+    			if(bundle.getString("message").equals("END") ||
+    					bundle.getString("message").equals("END_OK")){
+    				listenForConnectionButton.setEnabled(true);
+    			}
+    		}
+    	};
     }
 
+    private void listenForConnection(){
+		new ServerThread().start();
+		listenForConnectionButton.setEnabled(false);
+    }
+    
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -86,7 +105,7 @@ public class MainActivity extends Activity {
         return true;
     }
     
-    public void initBluetooth(Activity caller, int requestCode){
+    public boolean initBluetooth(Activity caller, int requestCode){
     	
     	mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     	if (mBluetoothAdapter == null) {
@@ -94,13 +113,16 @@ public class MainActivity extends Activity {
     		altDialog.setMessage("No bluetooth available");
     		altDialog.setNeutralButton("OK", null);
     		altDialog.show();
-    		return;
+    		return false;
     	}
     	
     	if(! mBluetoothAdapter.isEnabled()){
     		Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
     		caller.startActivityForResult(enableBtIntent, requestCode);
+    		return false;
     	}
+    	
+    	return true;
     }
 
 	public void enableDiscoverability() {
@@ -156,6 +178,14 @@ public class MainActivity extends Activity {
 		    				"was enabled. Thanks");					
 				}
 				break;
+			case REQUEST_INIT_BT_FOR_LISTEN_CONNECTION:
+				if(resultCode==RESULT_CANCELED){
+					showMessage("Bluetooth not activated. Please try again");					
+				}
+				if(resultCode==RESULT_OK){
+					listenForConnection();			
+				}
+				break;
 			default:
 				break;
 		}
@@ -165,57 +195,9 @@ public class MainActivity extends Activity {
     protected void showMessage(String message){
 	    Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
     }
-    
-    private class ListenerForConnectionTask extends AsyncTask<Void, Void, BluetoothDevice>{
-    	private BluetoothServerSocket mmServerSocket;
-    	private BluetoothAdapter adapter;
-    	
-    	public ListenerForConnectionTask() {
-			adapter = BluetoothAdapter.getDefaultAdapter();
-		}
-    	
-        /** The system calls this to perform work in a worker thread and
-          * delivers it the parameters given to AsyncTask.execute() */
-        protected BluetoothDevice doInBackground(Void... params) {
-            BluetoothServerSocket tmp = null;
-            try {
-                // MY_UUID is the app's UUID string, also used by the client code
-                tmp = adapter.listenUsingRfcommWithServiceRecord(Constants.APP_NAME, Constants.APP_UUID);
-            } catch (IOException e) { }
-            
-            mmServerSocket = tmp;
-            
-            BluetoothSocket socket = null;
-            // Keep listening until exception occurs or a socket is returned
-                try {
-                    socket = mmServerSocket.accept();
-                } catch (IOException e) {
-                }
-            
-            if(socket==null){
-            	return null;
-            }
-            else{
-            	BluetoothDevice device = socket.getRemoteDevice();
-            	try {
-					mmServerSocket.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-            	return device;
-            }
-        }
-        
-        /** The system calls this to perform work in the UI thread and delivers
-          * the result from doInBackground() */
-        protected void onPostExecute(BluetoothDevice device) {
-            if(device == null){
-            	showMessage("Not connected with anybody");
-            }
-            else{
-            	showMessage("OLE !! Connected with " + device.getName());
-            }
-        }
 
-    }
+	public Button getListenForConnectionButton() {
+		return listenForConnectionButton;
+	}
+    
 }
