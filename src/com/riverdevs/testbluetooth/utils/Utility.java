@@ -5,9 +5,8 @@ import android.os.Handler;
 import android.os.Message;
 
 public class Utility {
-	public static Handler UIHandler;
 	
-	public static void showMessageOnUI(String message){
+	public static void showMessageOnUI(Handler UIHandler, String message){
 		if(UIHandler != null){
 	    	Bundle bundle = new Bundle();
 	    	bundle.putString("message", message);
